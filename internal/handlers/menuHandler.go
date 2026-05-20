@@ -8,6 +8,11 @@ import (
 	"github.com/ssklv/mixfood-menu-service/internal/domain"
 	"github.com/ssklv/mixfood-menu-service/internal/infrastructure"
 	"github.com/ssklv/mixfood-menu-service/internal/usecase"
+
+	//сваггер
+	//"github.com/gofiber/contrib/swagger"
+	"github.com/gofiber/contrib/v3/swaggerui"
+	_ "github.com/ssklv/mixfood-menu-service/docs"
 )
 
 type Logger interface {
@@ -103,6 +108,13 @@ func (mh *menuHandler) RequireRole(allowedRoles ...string) fiber.Handler {
 }
 
 func (mh *menuHandler) RegisterRoutes(app *fiber.App) {
+	app.Use(swaggerui.New(swaggerui.Config{
+		BasePath: "/",
+		FilePath: "./docs/swagger.json",
+		Path:     "swagger",
+		Title:    "Mixfood Menu API Docs",
+	}))
+
 	menu := app.Group("/api/menu")
 
 	menu.Get("/", mh.getAllDishes)
@@ -113,6 +125,19 @@ func (mh *menuHandler) RegisterRoutes(app *fiber.App) {
 	menu.Delete("/:id", mh.AuthMiddleware(), mh.RequireRole("admin"), mh.deleteDish)
 }
 
+// createDish godoc
+// @Summary      Create a new dish
+// @Description  Add a new dish or drink to the menu. Accessible only by users with the 'admin' role.
+// @Tags         menu
+// @Accept       json
+// @Produce      json
+// @Param        request  body      createDishReq  true  "New dish data"
+// @Success      201      {object}  domain.Dish
+// @Failure      400      {object}  map[string]string "Invalid request body or validation error"
+// @Failure      401      {object}  map[string]string "Unauthorized (missing or invalid token)"
+// @Failure      403      {object}  map[string]string "Forbidden (insufficient permissions)"
+// @Failure      500      {object}  map[string]string "Internal server error"
+// @Router       /menu [post]
 func (mh *menuHandler) createDish(c fiber.Ctx) error {
 	var req createDishReq
 	if err := c.Bind().Body(&req); err != nil {
@@ -151,6 +176,24 @@ func (mh *menuHandler) createDish(c fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(dish)
+}
+
+// getAllDishes godoc
+// @Summary      get all the dishes on the menu
+// @Description  returns the full list of available food and drinks. A public endpoint
+// @Tags         menu
+// @Produce      json
+// @Success      200  {array}   domain.Dish
+// @Failure      500  {object}  map[string]string "internal server error"
+// @Router       /menu [get]
+func (mh *menuHandler) getAllDishes(c fiber.Ctx) error {
+	dishes, err := mh.usecase.GetAllDishes(c.Context())
+	if err != nil {
+		mh.log.Error("failed to get all dishes", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal server error"})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(dishes)
 }
 
 func (mh *menuHandler) updateDish(c fiber.Ctx) error {
@@ -208,6 +251,17 @@ func (mh *menuHandler) updateDish(c fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(updatedDish)
 }
 
+// getDishByID godoc
+// @Summary      Get dish by ID
+// @Description  Get detailed information about a specific dish or drink by its unique ID. Public endpoint.
+// @Tags         menu
+// @Produce      json
+// @Param        id   path      int  true  "Dish ID"
+// @Success      200  {object}  domain.Dish
+// @Failure      400  {object}  map[string]string "Invalid dish ID format"
+// @Failure      404  {object}  map[string]string "Dish not found"
+// @Failure      500  {object}  map[string]string "Internal server error"
+// @Router       /menu/{id} [get]
 func (mh *menuHandler) getDishByID(c fiber.Ctx) error {
 	idParam := c.Params("id")
 	id, err := strconv.ParseInt(idParam, 10, 64)
@@ -226,16 +280,6 @@ func (mh *menuHandler) getDishByID(c fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(dish)
-}
-
-func (mh *menuHandler) getAllDishes(c fiber.Ctx) error {
-	dishes, err := mh.usecase.GetAllDishes(c.Context())
-	if err != nil {
-		mh.log.Error("failed to get all dishes", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal server error"})
-	}
-
-	return c.Status(fiber.StatusOK).JSON(dishes)
 }
 
 func (mh *menuHandler) deleteDish(c fiber.Ctx) error {

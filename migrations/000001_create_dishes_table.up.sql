@@ -1,0 +1,16 @@
+CREATE TABLE IF NOT EXISTS dishes (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    category VARCHAR(100) NOT NULL,
+    description TEXT NOT NULL,
+    price NUMERIC(10, 2) NOT NULL,
+    weight INT,
+    volume NUMERIC(10, 2),
+    proteins NUMERIC(10, 2) NOT NULL DEFAULT 0,
+    fats NUMERIC(10, 2) NOT NULL DEFAULT 0,
+    carbs NUMERIC(10, 2) NOT NULL DEFAULT 0,
+    calories INT NOT NULL DEFAULT 0,
+    image_url TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);

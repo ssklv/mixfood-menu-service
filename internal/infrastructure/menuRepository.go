@@ -74,7 +74,6 @@ func (r *menuRepository) CreateDish(ctx context.Context, dish *domain.Dish) erro
 	return nil
 }
 
-// GetDishByID — поиск одного блюда по ID
 func (r *menuRepository) GetDishByID(ctx context.Context, id int64) (*domain.Dish, error) {
 	sql, args, err := r.psql.
 		Select(dishCols...).

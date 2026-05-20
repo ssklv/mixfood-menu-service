@@ -30,7 +30,7 @@ func validateDishCategory(category string) error {
 	cleanCategory := strings.ToLower(strings.TrimSpace(category))
 
 	switch cleanCategory {
-	case "пицца", "бургер", "закуски", "салаты", "десерты", "напитки":
+	case "пицца", "бургеры", "закуски", "салаты", "десерты", "напитки":
 		return nil
 	default:
 		return ErrInvalidCategory
@@ -66,7 +66,6 @@ func validateDishImageURL(url string) error {
 	return nil
 }
 
-// Проверка соответствия категории и мер измерения (Вес vs Объем)
 func validateMeasurements(category string, weight *int, volume *float64) error {
 	cleanCategory := strings.ToLower(strings.TrimSpace(category))
 	if cleanCategory == "напитки" {

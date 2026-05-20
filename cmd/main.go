@@ -2,9 +2,11 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/adaptor" // Используем адаптер
 	"github.com/gofiber/fiber/v3/middleware/cors"
 	"github.com/joho/godotenv"
 
@@ -17,21 +19,20 @@ import (
 
 type zapAdapter struct{}
 
-func (za *zapAdapter) Error(msg string, fields ...any) {
-	logger.Logger.Error(msg)
-}
+func (za *zapAdapter) Error(msg string, fields ...any) { logger.Logger.Error(msg) }
+func (za *zapAdapter) Warn(msg string, fields ...any)  { logger.Logger.Warn(msg) }
 
-func (za *zapAdapter) Warn(msg string, fields ...any) {
-	logger.Logger.Warn(msg)
-}
-
+// @title       MixFood Menu Service API
+// @version     1.0
+// @description microservice for menu management
+// @host        localhost:8082
+// @BasePath    /api
 func main() {
 	logger.InitLogger()
 	defer logger.Logger.Sync()
-	logger.Logger.Info("Логгер из pizza-shared успешно запущен в сервисе меню!")
 
 	if err := godotenv.Load(); err != nil {
-		logger.Logger.Warn("Файл .env не найден, Go будет использовать системные переменные окружения")
+		logger.Logger.Warn("Файл .env не найден")
 	}
 
 	cfg := config.Load()
@@ -40,30 +41,31 @@ func main() {
 		AppName: "MixFood Menu Service v1.0",
 	})
 
+	// Подключаем Swagger UI
+	app.Get("/docs/*", adaptor.HTTPHandler(http.StripPrefix("/docs/", http.FileServer(http.Dir("./docs")))))
+
 	app.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:5173"},
 		AllowCredentials: true,
 		AllowHeaders:     []string{"Content-Type", "Authorization"},
 	}))
+
 	conn, err := infrastructure.Connect(cfg.DatabaseURL)
 	if err != nil {
-		logger.Logger.Fatal("Критическая ошибка: не удалось подключиться к БД меню: " + err.Error())
+		logger.Logger.Fatal("Ошибка БД: " + err.Error())
 	}
-	logger.Logger.Info("Успешное подключение к базе данных PostgreSQL (Menu)")
 	defer conn.Close()
 
 	tokenProvider := infrastructure.NewTokenProvider(cfg.JWTSecret, 15)
-
 	menuRepo := infrastructure.NewMenuRepository(conn, psql)
 	menuUsecase := usecase.NewMenuUsecase(menuRepo)
 
 	logAdapter := &zapAdapter{}
-
 	menuHandler := handlers.NewMenuHandler(menuUsecase, tokenProvider, logAdapter)
 	menuHandler.RegisterRoutes(app)
 
-	logger.Logger.Info(fmt.Sprintf("Сервер MixFood Menu успешно стартовал на порту :%s", cfg.ServerPort))
+	logger.Logger.Info(fmt.Sprintf("Сервер стартовал на :%s", cfg.ServerPort))
 	if err := app.Listen(":" + cfg.ServerPort); err != nil {
-		logger.Logger.Fatal("Сервер меню аварийно завершил работу: " + err.Error())
+		logger.Logger.Fatal("Сервер упал: " + err.Error())
 	}
 }

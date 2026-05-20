@@ -1,0 +1,305 @@
+basePath: /api
+definitions:
+  domain.Dish:
+    properties:
+      calories:
+        type: integer
+      carbs:
+        type: number
+      category:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      fats:
+        type: number
+      id:
+        type: integer
+      image_url:
+        type: string
+      name:
+        type: string
+      price:
+        type: number
+      proteins:
+        type: number
+      updated_at:
+        type: string
+      volume:
+        type: number
+      weight:
+        type: integer
+    type: object
+  handlers.createDishReq:
+    properties:
+      calories:
+        type: integer
+      carbs:
+        type: number
+      category:
+        type: string
+      description:
+        type: string
+      fats:
+        type: number
+      image_url:
+        type: string
+      name:
+        type: string
+      price:
+        type: number
+      proteins:
+        type: number
+      volume:
+        type: number
+      weight:
+        type: integer
+    type: object
+  handlers.updateDishReq:
+    properties:
+      calories:
+        type: integer
+      carbs:
+        type: number
+      category:
+        type: string
+      description:
+        type: string
+      fats:
+        type: number
+      image_url:
+        type: string
+      name:
+        type: string
+      price:
+        type: number
+      proteins:
+        type: number
+      volume:
+        type: number
+      weight:
+        type: integer
+    type: object
+host: localhost:8082
+info:
+  contact: {}
+  description: microservice for menu management
+  title: MixFood Menu Service API
+  version: "1.0"
+paths:
+  /menu:
+    get:
+      description: Get a full list of all available food and drinks in the menu. Public
+        endpoint.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.Dish'
+            type: array
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get all dishes
+      tags:
+      - menu
+    post:
+      consumes:
+      - application/json
+      description: Add a new dish or drink to the menu. Accessible only by users with
+        the 'admin' role.
+      parameters:
+      - description: New dish data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.createDishReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.Dish'
+        "400":
+          description: Invalid request body or validation error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized (missing or invalid token)
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden (insufficient permissions)
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new dish
+      tags:
+      - menu
+  /menu/{id}:
+    delete:
+      description: Delete a dish or drink from the menu by its unique ID. Accessible
+        only by users with the 'admin' role.
+      parameters:
+      - description: Dish ID to delete
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Dish successfully deleted message
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid dish ID format
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized (missing or invalid token)
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden (insufficient permissions)
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Dish not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete a dish
+      tags:
+      - menu
+    get:
+      description: Get detailed information about a specific dish or drink by its
+        unique ID. Public endpoint.
+      parameters:
+      - description: Dish ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Dish'
+        "400":
+          description: Invalid dish ID format
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Dish not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get dish by ID
+      tags:
+      - menu
+    patch:
+      consumes:
+      - application/json
+      description: Update specific fields of an existing dish by its unique ID. Accessible
+        only by users with the 'admin' role.
+      parameters:
+      - description: Dish ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Fields to update
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.updateDishReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Dish'
+        "400":
+          description: Invalid ID or update data validation error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized (missing or invalid token)
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden (insufficient permissions)
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Dish not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update a dish partially (PATCH)
+      tags:
+      - menu
+swagger: "2.0"
