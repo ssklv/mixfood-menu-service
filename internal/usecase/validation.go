@@ -9,15 +9,6 @@ const (
 	maxDishNameLen = 100
 )
 
-//	ErrInvalidName
-//	ErrInvalidCategory
-//	ErrInvalidPrice
-//	ErrInvalidWeight
-//	ErrInvalidBJU
-//	ErrInvalidImageURL
-//	//
-//	ErrDishAlreadyExists
-
 func validateDishName(name string) error {
 	count := utf8.RuneCountInString(strings.TrimSpace(name))
 	if count == 0 || count > maxDishNameLen {

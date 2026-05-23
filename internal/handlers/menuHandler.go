@@ -3,6 +3,7 @@ package handlers
 import (
 	"errors"
 	"strconv"
+	"strings"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/ssklv/mixfood-menu-service/internal/domain"
@@ -73,13 +74,16 @@ type updateDishReq struct {
 
 func (mh *menuHandler) AuthMiddleware() fiber.Handler {
 	return func(c fiber.Ctx) error {
-		tokenStr := c.Cookies(accessCookie)
-		if tokenStr == "" {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Вы не авторизованы (токен отсутствует)"})
+		authHeader := c.Get("Authorization")
+		if authHeader == "" {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Токен отсутствует"})
 		}
+
+		tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
+
 		userID, role, err := mh.tokenProvider.ParseToken(tokenStr)
 		if err != nil {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Сессия устарела или токен невалиден"})
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Неверный токен"})
 		}
 
 		c.Locals("userID", userID)
