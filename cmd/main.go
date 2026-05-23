@@ -41,13 +41,13 @@ func main() {
 		AppName: "MixFood Menu Service v1.0",
 	})
 
-	// Подключаем Swagger UI
 	app.Get("/docs/*", adaptor.HTTPHandler(http.StripPrefix("/docs/", http.FileServer(http.Dir("./docs")))))
 
+	// Разрешаем любые источники, чтобы работал и Swagger, и фронтенд
 	app.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173"},
-		AllowCredentials: true,
+		AllowOrigins:     []string{"*"},
 		AllowHeaders:     []string{"Content-Type", "Authorization"},
+		AllowCredentials: false,
 	}))
 
 	conn, err := infrastructure.Connect(cfg.DatabaseURL)
