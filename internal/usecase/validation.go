@@ -79,10 +79,10 @@ func validateDishImageURL(url string) error {
 	if trimmed == "" {
 		return nil
 	}
-	if !strings.HasPrefix(trimmed, "http://") && !strings.HasPrefix(trimmed, "https://") {
-		return ErrInvalidImageURL
+	if strings.HasPrefix(trimmed, "http://") || strings.HasPrefix(trimmed, "https://") || strings.HasPrefix(trimmed, "uploads/") {
+		return nil
 	}
-	return nil
+	return ErrInvalidImageURL
 }
 
 func validateMeasurements(category string, weight *int, volume *float64) error {

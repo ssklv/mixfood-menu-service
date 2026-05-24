@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"io"
 	"strconv"
 	"strings"
@@ -9,7 +10,6 @@ import (
 	"github.com/ssklv/mixfood-menu-service/internal/domain"
 	"github.com/ssklv/mixfood-menu-service/internal/usecase"
 
-	"github.com/gofiber/contrib/v3/swaggerui"
 	_ "github.com/ssklv/mixfood-menu-service/docs"
 )
 
@@ -41,16 +41,35 @@ func NewMenuHandler(uc usecase.MenuUsecase, tp usecase.TokenProvider, log Logger
 func (mh *menuHandler) AuthMiddleware() fiber.Handler {
 	return func(c fiber.Ctx) error {
 		authHeader := c.Get("Authorization")
+
+		fmt.Printf("DEBUG: Received Authorization header: '%s'\n", authHeader)
+
 		if authHeader == "" {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Токен отсутствует"})
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Заголовок Authorization отсутствует"})
 		}
-		tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
+
+		parts := strings.Split(authHeader, " ")
+
+		tokenStr := ""
+		if len(parts) == 2 && strings.ToLower(parts[0]) == "bearer" {
+			tokenStr = parts[1]
+		} else if len(parts) == 1 {
+			tokenStr = parts[0]
+		} else {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Неверный формат токена"})
+		}
+
+		// 3. Парсим токен
 		userID, role, err := mh.tokenProvider.ParseToken(tokenStr)
 		if err != nil {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Неверный токен"})
+			fmt.Printf("DEBUG: Parse Error: %v | Token: %s\n", err, tokenStr)
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Ошибка валидации токена"})
 		}
+
+		// Сохраняем данные для следующих хендлеров
 		c.Locals("userID", userID)
 		c.Locals("userRole", role)
+
 		return c.Next()
 	}
 }
@@ -71,7 +90,6 @@ func (mh *menuHandler) RequireRole(allowedRoles ...string) fiber.Handler {
 }
 
 func (mh *menuHandler) RegisterRoutes(app *fiber.App) {
-	app.Use(swaggerui.New(swaggerui.Config{BasePath: "/", FilePath: "./docs/swagger.json", Path: "swagger"}))
 	menu := app.Group("/api/menu")
 	menu.Get("/", mh.getAllDishes)
 	menu.Get("/:id", mh.getDishByID)
@@ -81,6 +99,13 @@ func (mh *menuHandler) RegisterRoutes(app *fiber.App) {
 	menu.Delete("/:id", mh.AuthMiddleware(), mh.RequireRole("admin"), mh.deleteDish)
 }
 
+// @Summary Создать блюдо
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param dish body domain.Dish true "Данные блюда"
+// @Success 201 {object} domain.Dish
+// @Router /api/menu [post]
 func (mh *menuHandler) createDish(c fiber.Ctx) error {
 	var dish domain.Dish
 	if err := c.Bind().Body(&dish); err != nil {
@@ -92,6 +117,10 @@ func (mh *menuHandler) createDish(c fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(dish)
 }
 
+// @Summary Получить все блюда
+// @Produce json
+// @Success 200 {array} domain.Dish
+// @Router /api/menu [get]
 func (mh *menuHandler) getAllDishes(c fiber.Ctx) error {
 	dishes, err := mh.usecase.GetAllDishes(c.Context())
 	if err != nil {
@@ -100,6 +129,14 @@ func (mh *menuHandler) getAllDishes(c fiber.Ctx) error {
 	return c.JSON(dishes)
 }
 
+// @Summary Обновить блюдо
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path int true "ID блюда"
+// @Param params body domain.UpdateDishParams true "Параметры обновления"
+// @Success 200 {object} domain.Dish
+// @Router /api/menu/{id} [patch]
 func (mh *menuHandler) updateDish(c fiber.Ctx) error {
 	id, _ := strconv.ParseInt(c.Params("id"), 10, 64)
 	var params domain.UpdateDishParams
@@ -114,6 +151,11 @@ func (mh *menuHandler) updateDish(c fiber.Ctx) error {
 	return c.JSON(updated)
 }
 
+// @Summary Получить блюдо по ID
+// @Produce json
+// @Param id path int true "ID блюда"
+// @Success 200 {object} domain.Dish
+// @Router /api/menu/{id} [get]
 func (mh *menuHandler) getDishByID(c fiber.Ctx) error {
 	id, _ := strconv.ParseInt(c.Params("id"), 10, 64)
 	dish, err := mh.usecase.GetDishByID(c.Context(), id)
@@ -123,6 +165,11 @@ func (mh *menuHandler) getDishByID(c fiber.Ctx) error {
 	return c.JSON(dish)
 }
 
+// @Summary Удалить блюдо
+// @Security BearerAuth
+// @Param id path int true "ID блюда"
+// @Success 200 {object} map[string]string
+// @Router /api/menu/{id} [delete]
 func (mh *menuHandler) deleteDish(c fiber.Ctx) error {
 	id, _ := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err := mh.usecase.DeleteDish(c.Context(), id); err != nil {
@@ -131,6 +178,12 @@ func (mh *menuHandler) deleteDish(c fiber.Ctx) error {
 	return c.JSON(fiber.Map{"message": "deleted"})
 }
 
+// @Summary Загрузить изображение
+// @Security BearerAuth
+// @Produce json
+// @Param image formData file true "Изображение"
+// @Success 200 {object} map[string]string
+// @Router /api/menu/upload [post]
 func (mh *menuHandler) uploadImage(c fiber.Ctx) error {
 	file, err := c.FormFile("image")
 	if err != nil {

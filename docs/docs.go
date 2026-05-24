@@ -15,57 +15,45 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/menu": {
+        "/api/menu": {
             "get": {
-                "description": "Get a full list of all available food and drinks in the menu. Public endpoint.",
                 "produces": [
                     "application/json"
                 ],
-                "tags": [
-                    "menu"
-                ],
-                "summary": "Get all dishes",
+                "summary": "Получить все блюда",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/domain.Dish"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
+                                "$ref": "#/definitions/github_com_ssklv_mixfood-menu-service_internal_domain.Dish"
                             }
                         }
                     }
                 }
             },
             "post": {
-                "description": "Add a new dish or drink to the menu. Accessible only by users with the 'admin' role.",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
                 "produces": [
                     "application/json"
                 ],
-                "tags": [
-                    "menu"
-                ],
-                "summary": "Create a new dish",
+                "summary": "Создать блюдо",
                 "parameters": [
                     {
-                        "description": "New dish data",
-                        "name": "request",
+                        "description": "Данные блюда",
+                        "name": "dish",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.createDishReq"
+                            "$ref": "#/definitions/github_com_ssklv_mixfood-menu-service_internal_domain.Dish"
                         }
                     }
                 ],
@@ -73,38 +61,35 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/domain.Dish"
+                            "$ref": "#/definitions/github_com_ssklv_mixfood-menu-service_internal_domain.Dish"
                         }
-                    },
-                    "400": {
-                        "description": "Invalid request body or validation error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized (missing or invalid token)",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden (insufficient permissions)",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
+                    }
+                }
+            }
+        },
+        "/api/menu/upload": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Загрузить изображение",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Изображение",
+                        "name": "image",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -115,20 +100,16 @@ const docTemplate = `{
                 }
             }
         },
-        "/menu/{id}": {
+        "/api/menu/{id}": {
             "get": {
-                "description": "Get detailed information about a specific dish or drink by its unique ID. Public endpoint.",
                 "produces": [
                     "application/json"
                 ],
-                "tags": [
-                    "menu"
-                ],
-                "summary": "Get dish by ID",
+                "summary": "Получить блюдо по ID",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "Dish ID",
+                        "description": "ID блюда",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -138,51 +119,22 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/domain.Dish"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid dish ID format",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Dish not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/github_com_ssklv_mixfood-menu-service_internal_domain.Dish"
                         }
                     }
                 }
             },
             "delete": {
-                "description": "Delete a dish or drink from the menu by its unique ID. Accessible only by users with the 'admin' role.",
-                "produces": [
-                    "application/json"
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
                 ],
-                "tags": [
-                    "menu"
-                ],
-                "summary": "Delete a dish",
+                "summary": "Удалить блюдо",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "Dish ID to delete",
+                        "description": "ID блюда",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -190,52 +142,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Dish successfully deleted message",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid dish ID format",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized (missing or invalid token)",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden (insufficient permissions)",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Dish not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
+                        "description": "OK",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -246,32 +153,33 @@ const docTemplate = `{
                 }
             },
             "patch": {
-                "description": "Update specific fields of an existing dish by its unique ID. Accessible only by users with the 'admin' role.",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
                 "produces": [
                     "application/json"
                 ],
-                "tags": [
-                    "menu"
-                ],
-                "summary": "Update a dish partially (PATCH)",
+                "summary": "Обновить блюдо",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "Dish ID",
+                        "description": "ID блюда",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Fields to update",
-                        "name": "request",
+                        "description": "Параметры обновления",
+                        "name": "params",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.updateDishReq"
+                            "$ref": "#/definitions/github_com_ssklv_mixfood-menu-service_internal_domain.UpdateDishParams"
                         }
                     }
                 ],
@@ -279,52 +187,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/domain.Dish"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid ID or update data validation error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized (missing or invalid token)",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden (insufficient permissions)",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Dish not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/github_com_ssklv_mixfood-menu-service_internal_domain.Dish"
                         }
                     }
                 }
@@ -332,7 +195,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "domain.Dish": {
+        "github_com_ssklv_mixfood-menu-service_internal_domain.Dish": {
             "type": "object",
             "properties": {
                 "calories": {
@@ -379,14 +242,15 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.createDishReq": {
+        "github_com_ssklv_mixfood-menu-service_internal_domain.UpdateDishParams": {
             "type": "object",
             "properties": {
                 "calories": {
                     "type": "integer"
                 },
                 "carbs": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "category": {
                     "type": "string"
@@ -395,65 +259,42 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "fats": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
-                "image_url": {
+                "id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "imageURL": {
                     "type": "string"
                 },
                 "name": {
                     "type": "string"
                 },
                 "price": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "proteins": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "volume": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "weight": {
                     "type": "integer"
                 }
             }
-        },
-        "handlers.updateDishReq": {
-            "type": "object",
-            "properties": {
-                "calories": {
-                    "type": "integer"
-                },
-                "carbs": {
-                    "type": "number"
-                },
-                "category": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "fats": {
-                    "type": "number"
-                },
-                "image_url": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "price": {
-                    "type": "number"
-                },
-                "proteins": {
-                    "type": "number"
-                },
-                "volume": {
-                    "type": "number"
-                },
-                "weight": {
-                    "type": "integer"
-                }
-            }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`
@@ -462,10 +303,10 @@ const docTemplate = `{
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
 	Host:             "localhost:8082",
-	BasePath:         "/api",
+	BasePath:         "/",
 	Schemes:          []string{},
-	Title:            "MixFood Menu Service API",
-	Description:      "microservice for menu management",
+	Title:            "Mixfood Menu API",
+	Description:      "API для управления меню",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

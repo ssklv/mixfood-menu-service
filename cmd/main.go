@@ -2,12 +2,11 @@ package main
 
 import (
 	"fmt"
-	"net/http"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/gofiber/fiber/v3"
-	"github.com/gofiber/fiber/v3/middleware/adaptor"
-	"github.com/gofiber/fiber/v3/middleware/cors" // Импорт для статики
+	"github.com/gofiber/fiber/v3/middleware/cors"
+	"github.com/gofiber/fiber/v3/middleware/static"
 	"github.com/joho/godotenv"
 
 	"github.com/ssklv/mixfood-menu-service/internal/config"
@@ -17,32 +16,45 @@ import (
 	"github.com/ssklv/pizza-shared/pkg/logger"
 )
 
-type zapAdapter struct{}
-
-func (za *zapAdapter) Error(msg string, fields ...any) { logger.Logger.Error(msg) }
-func (za *zapAdapter) Warn(msg string, fields ...any)  { logger.Logger.Warn(msg) }
-
+// @title Mixfood Menu API
+// @version 1.0
+// @description API для управления меню
+// @host localhost:8082
+// @BasePath /
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 func main() {
 	logger.InitLogger()
 	defer logger.Logger.Sync()
-
-	if err := godotenv.Load(); err != nil {
-		logger.Logger.Warn("Файл .env не найден")
-	}
+	_ = godotenv.Load()
 
 	cfg := config.Load()
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	app := fiber.New()
 
-	// Исправленная статика для Fiber v3
-	app.Get("/uploads/*", adaptor.HTTPHandler(http.StripPrefix("/uploads/", http.FileServer(http.Dir("./uploads")))))
-
-	app.Get("/docs/*", adaptor.HTTPHandler(http.StripPrefix("/docs/", http.FileServer(http.Dir("./docs")))))
-
 	app.Use(cors.New(cors.Config{
-		AllowOrigins: []string{"*"},
-		AllowHeaders: []string{"Content-Type", "Authorization"},
+		AllowOrigins:     []string{"http://localhost:8082"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowCredentials: true,
 	}))
+
+	app.Get("/swagger/*", func(c fiber.Ctx) error {
+		if c.Path() == "/swagger/doc.json" {
+			return c.SendFile("./docs/swagger.json")
+		}
+		c.Set("Content-Type", "text/html")
+		return c.SendString(`<!DOCTYPE html>
+            <html>
+            <head><link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.19.0/swagger-ui.css"></head>
+            <body><div id="swagger-ui"></div>
+            <script src="https://unpkg.com/swagger-ui-dist@5.19.0/swagger-ui-bundle.js"></script>
+            <script>SwaggerUIBundle({url: "/swagger/doc.json", dom_id: '#swagger-ui'});</script>
+            </body></html>`)
+	})
+
+	app.Use("/uploads", static.New("./uploads"))
 
 	conn, err := infrastructure.Connect(cfg.DatabaseURL)
 	if err != nil {
@@ -52,15 +64,13 @@ func main() {
 
 	fileStorage, err := infrastructure.NewLocalFileStorage("./uploads")
 	if err != nil {
-		logger.Logger.Fatal("Ошибка инициализации хранилища: " + err.Error())
+		logger.Logger.Fatal("Ошибка хранилища: " + err.Error())
 	}
 
 	tokenProvider := infrastructure.NewTokenProvider(cfg.JWTSecret, 15)
-	menuRepo := infrastructure.NewMenuRepository(conn, psql)
-	menuUsecase := usecase.NewMenuUsecase(menuRepo)
+	menuUsecase := usecase.NewMenuUsecase(infrastructure.NewMenuRepository(conn, psql))
 
-	menuHandler := handlers.NewMenuHandler(menuUsecase, tokenProvider, &zapAdapter{}, fileStorage)
-	menuHandler.RegisterRoutes(app)
+	handlers.NewMenuHandler(menuUsecase, tokenProvider, nil, fileStorage).RegisterRoutes(app)
 
 	logger.Logger.Info(fmt.Sprintf("Сервер стартовал на :%s", cfg.ServerPort))
 	if err := app.Listen(":" + cfg.ServerPort); err != nil {
