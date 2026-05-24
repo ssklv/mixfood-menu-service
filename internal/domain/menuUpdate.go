@@ -6,8 +6,8 @@ type UpdateDishParams struct {
 	Category    *string
 	Description *string
 	Price       *float64
-	Weight      **int
-	Volume      **float64
+	Weight      *int
+	Volume      *float64
 	Proteins    *float64
 	Fats        *float64
 	Carbs       *float64
