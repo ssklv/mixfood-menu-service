@@ -182,8 +182,8 @@ paths:
       - BearerAuth: []
       summary: Загрузить изображение
 securityDefinitions:
-  BearerAuth:
-    in: header
-    name: Authorization
+  CookieAuth:
+    in: cookie
+    name: jwt
     type: apiKey
 swagger: "2.0"

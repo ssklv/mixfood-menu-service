@@ -1,10 +1,8 @@
 package handlers
 
 import (
-	"fmt"
 	"io"
 	"strconv"
-	"strings"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/ssklv/mixfood-menu-service/internal/domain"
@@ -40,36 +38,18 @@ func NewMenuHandler(uc usecase.MenuUsecase, tp usecase.TokenProvider, log Logger
 
 func (mh *menuHandler) AuthMiddleware() fiber.Handler {
 	return func(c fiber.Ctx) error {
-		authHeader := c.Get("Authorization")
-
-		fmt.Printf("DEBUG: Received Authorization header: '%s'\n", authHeader)
-
-		if authHeader == "" {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Заголовок Authorization отсутствует"})
+		tokenStr := c.Cookies("access_token")
+		if tokenStr == "" {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Токен отсутствует"})
 		}
 
-		parts := strings.Split(authHeader, " ")
-
-		tokenStr := ""
-		if len(parts) == 2 && strings.ToLower(parts[0]) == "bearer" {
-			tokenStr = parts[1]
-		} else if len(parts) == 1 {
-			tokenStr = parts[0]
-		} else {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Неверный формат токена"})
-		}
-
-		// 3. Парсим токен
 		userID, role, err := mh.tokenProvider.ParseToken(tokenStr)
 		if err != nil {
-			fmt.Printf("DEBUG: Parse Error: %v | Token: %s\n", err, tokenStr)
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Ошибка валидации токена"})
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Ошибка валидации"})
 		}
 
-		// Сохраняем данные для следующих хендлеров
 		c.Locals("userID", userID)
 		c.Locals("userRole", role)
-
 		return c.Next()
 	}
 }

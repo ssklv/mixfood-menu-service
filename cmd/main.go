@@ -21,9 +21,9 @@ import (
 // @description API для управления меню
 // @host localhost:8082
 // @BasePath /
-// @securityDefinitions.apikey BearerAuth
-// @in header
-// @name Authorization
+// @securityDefinitions.apikey CookieAuth
+// @in cookie
+// @name jwt
 func main() {
 	logger.InitLogger()
 	defer logger.Logger.Sync()
@@ -34,10 +34,28 @@ func main() {
 	app := fiber.New()
 
 	app.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:8082"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With"},
-		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowOrigins: []string{
+			"http://localhost:5173",
+			"http://localhost:8080",
+			"http://localhost:8082",
+			"http://localhost:8083",
+		},
 		AllowCredentials: true,
+		AllowHeaders: []string{
+			"Origin",
+			"Content-Type",
+			"Accept",
+			"Authorization",
+			"X-Requested-With",
+		},
+		AllowMethods: []string{
+			"GET",
+			"POST",
+			"PUT",
+			"PATCH",
+			"DELETE",
+			"OPTIONS",
+		},
 	}))
 
 	app.Get("/swagger/*", func(c fiber.Ctx) error {

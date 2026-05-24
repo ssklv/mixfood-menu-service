@@ -291,10 +291,10 @@ const docTemplate = `{
         }
     },
     "securityDefinitions": {
-        "BearerAuth": {
+        "CookieAuth": {
             "type": "apiKey",
-            "name": "Authorization",
-            "in": "header"
+            "name": "jwt",
+            "in": "cookie"
         }
     }
 }`
