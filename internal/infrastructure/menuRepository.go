@@ -2,6 +2,7 @@ package infrastructure
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -13,8 +14,8 @@ import (
 
 var dishCols = []string{
 	"id",
+	"category_id",
 	"name",
-	"category",
 	"description",
 	"price",
 	"weight",
@@ -38,33 +39,35 @@ func NewMenuRepository(db *pgxpool.Pool, psql sq.StatementBuilderType) *menuRepo
 }
 
 func (r *menuRepository) CreateDish(ctx context.Context, d *domain.Dish) error {
-	cols := dishCols[1:]
-
 	sql, args, err := r.psql.
 		Insert("dishes").
-		Columns(cols...).
-		Values(
-			d.Name, d.Category, d.Description, d.Price,
-			d.Weight, d.Volume, d.Proteins, d.Fats, d.Carbs, d.Calories,
-			d.ImageURL, d.CreatedAt, d.UpdatedAt,
+		Columns(
+			"category_id", "name", "description", "price",
+			"weight", "volume", "proteins", "fats", "carbs", "calories",
+			"image_url",
 		).
-		Suffix("RETURNING id").
+		Values(
+			d.CategoryID, d.Name, d.Description, d.Price,
+			d.Weight, d.Volume, d.Proteins, d.Fats, d.Carbs, d.Calories,
+			d.ImageURL,
+		).
+		Suffix("RETURNING id, created_at, updated_at").
 		ToSql()
 
 	if err != nil {
 		return err
 	}
-	return r.db.QueryRow(ctx, sql, args...).Scan(&d.ID)
+	return r.db.QueryRow(ctx, sql, args...).Scan(&d.ID, &d.CreatedAt, &d.UpdatedAt)
 }
 
 func (r *menuRepository) UpdateDish(ctx context.Context, input *domain.UpdateDishParams) (*domain.Dish, error) {
 	builder := r.psql.Update("dishes")
 
+	if input.CategoryID != nil {
+		builder = builder.Set("category_id", *input.CategoryID)
+	}
 	if input.Name != nil {
 		builder = builder.Set("name", *input.Name)
-	}
-	if input.Category != nil {
-		builder = builder.Set("category", *input.Category)
 	}
 	if input.Description != nil {
 		builder = builder.Set("description", *input.Description)
@@ -73,10 +76,10 @@ func (r *menuRepository) UpdateDish(ctx context.Context, input *domain.UpdateDis
 		builder = builder.Set("price", *input.Price)
 	}
 	if input.Weight != nil {
-		builder = builder.Set("weight", *input.Weight)
+		builder = builder.Set("weight", input.Weight)
 	}
 	if input.Volume != nil {
-		builder = builder.Set("volume", *input.Volume)
+		builder = builder.Set("volume", input.Volume)
 	}
 	if input.Proteins != nil {
 		builder = builder.Set("proteins", *input.Proteins)
@@ -107,7 +110,7 @@ func (r *menuRepository) UpdateDish(ctx context.Context, input *domain.UpdateDis
 
 	dish := &domain.Dish{}
 	err = scanDish(r.db.QueryRow(ctx, sql, args...), dish)
-	if err == pgx.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrDishNotFound
 	}
 	return dish, err
@@ -148,7 +151,7 @@ func (r *menuRepository) GetDishByID(ctx context.Context, id int64) (*domain.Dis
 
 	dish := &domain.Dish{}
 	if err := scanDish(r.db.QueryRow(ctx, sql, args...), dish); err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrDishNotFound
 		}
 		return nil, err
@@ -187,8 +190,8 @@ func (r *menuRepository) GetAllDishes(ctx context.Context) ([]*domain.Dish, erro
 func scanDish(row pgx.Row, d *domain.Dish) error {
 	return row.Scan(
 		&d.ID,
+		&d.CategoryID,
 		&d.Name,
-		&d.Category,
 		&d.Description,
 		&d.Price,
 		&d.Weight,

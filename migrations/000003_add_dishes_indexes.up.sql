@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS idx_dishes_category_availability ON dishes(category_id, is_available);

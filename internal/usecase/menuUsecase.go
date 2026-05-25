@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"time"
 
 	"github.com/ssklv/mixfood-menu-service/internal/domain"
 )
@@ -19,9 +18,6 @@ func (mu *menuUsecase) CreateDish(ctx context.Context, d *domain.Dish) error {
 	if err := validateDish(d); err != nil {
 		return err
 	}
-
-	d.CreatedAt = time.Now()
-	d.UpdatedAt = time.Now()
 	return mu.repository.CreateDish(ctx, d)
 }
 

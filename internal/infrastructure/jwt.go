@@ -22,10 +22,9 @@ func NewTokenProvider(key string, ttl time.Duration) usecase.TokenProvider {
 }
 
 func (p *tokenProvider) ParseToken(tokenString string) (int64, string, error) {
-	fmt.Printf("DEBUG: Parsing token: '%s'\n", tokenString) // Видим, что именно пришло
+	fmt.Printf("DEBUG: Parsing token: '%s'\n", tokenString)
 
 	token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
-		// Проверка метода подписи
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("unexpected signing method")
 		}
@@ -38,7 +37,6 @@ func (p *tokenProvider) ParseToken(tokenString string) (int64, string, error) {
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		// Безопасное получение sub
 		sub, ok := claims["sub"].(float64)
 		if !ok {
 			return 0, "", errors.New("sub claim is not a number")

@@ -6,9 +6,9 @@ definitions:
         type: integer
       carbs:
         type: number
-      category:
-        type: string
-      created_at:
+      categoryId:
+        type: integer
+      createdAt:
         type: string
       description:
         type: string
@@ -16,7 +16,7 @@ definitions:
         type: number
       id:
         type: integer
-      image_url:
+      imageUrl:
         type: string
       name:
         type: string
@@ -24,7 +24,7 @@ definitions:
         type: number
       proteins:
         type: number
-      updated_at:
+      updatedAt:
         type: string
       volume:
         type: number
@@ -36,39 +36,36 @@ definitions:
       calories:
         type: integer
       carbs:
-        format: float64
         type: number
-      category:
-        type: string
+      categoryId:
+        type: integer
       description:
         type: string
       fats:
-        format: float64
         type: number
-      id:
-        format: int64
-        type: integer
-      imageURL:
+      imageUrl:
         type: string
       name:
         type: string
       price:
-        format: float64
         type: number
       proteins:
-        format: float64
         type: number
       volume:
-        format: float64
         type: number
       weight:
         type: integer
     type: object
+  internal_handlers.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
 host: localhost:8082
 info:
   contact: {}
-  description: API для управления меню
-  title: Mixfood Menu API
+  description: API для управления категориями и блюдами меню
+  title: Mixfood Menu Service API
   version: "1.0"
 paths:
   /api/menu:
@@ -87,7 +84,7 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: Данные блюда
+      - description: Данные создаваемого блюда
         in: body
         name: dish
         required: true
@@ -100,13 +97,17 @@ paths:
           description: Created
           schema:
             $ref: '#/definitions/github_com_ssklv_mixfood-menu-service_internal_domain.Dish'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_handlers.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Создать блюдо
+      summary: Создать новое блюдо
   /api/menu/{id}:
     delete:
       parameters:
-      - description: ID блюда
+      - description: Идентификатор блюда
         in: path
         name: id
         required: true
@@ -120,10 +121,10 @@ paths:
             type: object
       security:
       - BearerAuth: []
-      summary: Удалить блюдо
+      summary: Удалить блюдо из меню
     get:
       parameters:
-      - description: ID блюда
+      - description: Идентификатор блюда
         in: path
         name: id
         required: true
@@ -140,12 +141,12 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: ID блюда
+      - description: Идентификатор блюда
         in: path
         name: id
         required: true
         type: integer
-      - description: Параметры обновления
+      - description: Поля для обновления
         in: body
         name: params
         required: true
@@ -160,11 +161,13 @@ paths:
             $ref: '#/definitions/github_com_ssklv_mixfood-menu-service_internal_domain.Dish'
       security:
       - BearerAuth: []
-      summary: Обновить блюдо
+      summary: Обновить параметры блюда
   /api/menu/upload:
     post:
+      consumes:
+      - multipart/form-data
       parameters:
-      - description: Изображение
+      - description: Файл изображения
         in: formData
         name: image
         required: true
@@ -182,8 +185,14 @@ paths:
       - BearerAuth: []
       summary: Загрузить изображение
 securityDefinitions:
+  BearerAuth:
+    description: 'Введите токен в формате: Bearer <token>'
+    in: header
+    name: Authorization
+    type: apiKey
   CookieAuth:
+    description: Токен доступа (access_token), автоматически извлекаемый из Cookie
     in: cookie
-    name: jwt
+    name: access_token
     type: apiKey
 swagger: "2.0"

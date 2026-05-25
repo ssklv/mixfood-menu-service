@@ -1,1 +1,0 @@
-CREATE INDEX IF NOT EXISTS idx_dishes_category ON dishes(category);

@@ -45,10 +45,10 @@ const docTemplate = `{
                 "produces": [
                     "application/json"
                 ],
-                "summary": "Создать блюдо",
+                "summary": "Создать новое блюдо",
                 "parameters": [
                     {
-                        "description": "Данные блюда",
+                        "description": "Данные создаваемого блюда",
                         "name": "dish",
                         "in": "body",
                         "required": true,
@@ -63,6 +63,12 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/github_com_ssklv_mixfood-menu-service_internal_domain.Dish"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handlers.ErrorResponse"
+                        }
                     }
                 }
             }
@@ -74,6 +80,9 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "consumes": [
+                    "multipart/form-data"
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -81,7 +90,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "file",
-                        "description": "Изображение",
+                        "description": "Файл изображения",
                         "name": "image",
                         "in": "formData",
                         "required": true
@@ -109,7 +118,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "ID блюда",
+                        "description": "Идентификатор блюда",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -130,11 +139,11 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "summary": "Удалить блюдо",
+                "summary": "Удалить блюдо из меню",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "ID блюда",
+                        "description": "Идентификатор блюда",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -164,17 +173,17 @@ const docTemplate = `{
                 "produces": [
                     "application/json"
                 ],
-                "summary": "Обновить блюдо",
+                "summary": "Обновить параметры блюда",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "ID блюда",
+                        "description": "Идентификатор блюда",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Параметры обновления",
+                        "description": "Поля для обновления",
                         "name": "params",
                         "in": "body",
                         "required": true,
@@ -204,10 +213,10 @@ const docTemplate = `{
                 "carbs": {
                     "type": "number"
                 },
-                "category": {
-                    "type": "string"
+                "categoryId": {
+                    "type": "integer"
                 },
-                "created_at": {
+                "createdAt": {
                     "type": "string"
                 },
                 "description": {
@@ -219,7 +228,7 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
-                "image_url": {
+                "imageUrl": {
                     "type": "string"
                 },
                 "name": {
@@ -231,7 +240,7 @@ const docTemplate = `{
                 "proteins": {
                     "type": "number"
                 },
-                "updated_at": {
+                "updatedAt": {
                     "type": "string"
                 },
                 "volume": {
@@ -249,51 +258,57 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "carbs": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
-                "category": {
-                    "type": "string"
+                "categoryId": {
+                    "type": "integer"
                 },
                 "description": {
                     "type": "string"
                 },
                 "fats": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
-                "id": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "imageURL": {
+                "imageUrl": {
                     "type": "string"
                 },
                 "name": {
                     "type": "string"
                 },
                 "price": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "proteins": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "volume": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "weight": {
                     "type": "integer"
                 }
             }
+        },
+        "internal_handlers.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                }
+            }
         }
     },
     "securityDefinitions": {
-        "CookieAuth": {
+        "BearerAuth": {
+            "description": "Введите токен в формате: Bearer \u003ctoken\u003e",
             "type": "apiKey",
-            "name": "jwt",
+            "name": "Authorization",
+            "in": "header"
+        },
+        "CookieAuth": {
+            "description": "Токен доступа (access_token), автоматически извлекаемый из Cookie",
+            "type": "apiKey",
+            "name": "access_token",
             "in": "cookie"
         }
     }
@@ -305,8 +320,8 @@ var SwaggerInfo = &swag.Spec{
 	Host:             "localhost:8082",
 	BasePath:         "/",
 	Schemes:          []string{},
-	Title:            "Mixfood Menu API",
-	Description:      "API для управления меню",
+	Title:            "Mixfood Menu Service API",
+	Description:      "API для управления категориями и блюдами меню",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

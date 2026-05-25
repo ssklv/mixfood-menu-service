@@ -6,7 +6,7 @@ import (
 
 var (
 	ErrInvalidName         = errors.New("dish name is too short or exceeds maximum length")
-	ErrInvalidCategory     = errors.New("invalid category: must be пицца, бургеры, закуски, салаты, десерты or напитки")
+	ErrInvalidCategory     = errors.New("invalid category id")
 	ErrInvalidPrice        = errors.New("dish price must be greater than zero")
 	ErrInvalidWeight       = errors.New("dish weight must be greater than zero")
 	ErrInvalidVolume       = errors.New("dish volume must be greater than zero")

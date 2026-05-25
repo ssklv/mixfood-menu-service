@@ -5,7 +5,6 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/gofiber/fiber/v3"
-	"github.com/gofiber/fiber/v3/middleware/cors"
 	"github.com/gofiber/fiber/v3/middleware/static"
 	"github.com/joho/godotenv"
 
@@ -14,84 +13,82 @@ import (
 	"github.com/ssklv/mixfood-menu-service/internal/infrastructure"
 	"github.com/ssklv/mixfood-menu-service/internal/usecase"
 	"github.com/ssklv/pizza-shared/pkg/logger"
+
+	_ "github.com/ssklv/mixfood-menu-service/docs"
 )
 
-// @title Mixfood Menu API
-// @version 1.0
-// @description API для управления меню
-// @host localhost:8082
-// @BasePath /
-// @securityDefinitions.apikey CookieAuth
-// @in cookie
-// @name jwt
+type zapAdapter struct{}
+
+func (za *zapAdapter) Error(msg string, fields ...any) {
+	if logger.Logger != nil {
+		logger.Logger.Sugar().Errorw(msg, fields...)
+	}
+}
+
+func (za *zapAdapter) Warn(msg string, fields ...any) {
+	if logger.Logger != nil {
+		logger.Logger.Sugar().Warnw(msg, fields...)
+	}
+}
+
+// @title                       Mixfood Menu Service API
+// @version                     1.0
+// @description                 API для управления категориями и блюдами меню
+// @host                        localhost:8082
+// @BasePath                    /
+
+// @securityDefinitions.apikey  BearerAuth
+// @in                          header
+// @name                        Authorization
+// @description                 Введите токен в формате: Bearer <token>
+
+// @securityDefinitions.apikey  CookieAuth
+// @in                          cookie
+// @name                        access_token
+// @description                 Токен доступа (access_token), автоматически извлекаемый из Cookie
 func main() {
 	logger.InitLogger()
-	defer logger.Logger.Sync()
-	_ = godotenv.Load()
+	if logger.Logger != nil {
+		defer logger.Logger.Sync()
+	}
+
+	if err := godotenv.Load(); err != nil && logger.Logger != nil {
+		logger.Logger.Warn("Файл .env не найден")
+	}
 
 	cfg := config.Load()
+	logAdapter := &zapAdapter{}
+
+	conn, err := infrastructure.Connect(cfg.DatabaseURL)
+	if err != nil && logger.Logger != nil {
+		logger.Logger.Fatal("Ошибка подключения к БД: " + err.Error())
+	}
+	defer conn.Close()
+
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
-	app := fiber.New()
 
-	app.Use(cors.New(cors.Config{
-		AllowOrigins: []string{
-			"http://localhost:5173",
-			"http://localhost:8080",
-			"http://localhost:8082",
-			"http://localhost:8083",
-		},
-		AllowCredentials: true,
-		AllowHeaders: []string{
-			"Origin",
-			"Content-Type",
-			"Accept",
-			"Authorization",
-			"X-Requested-With",
-		},
-		AllowMethods: []string{
-			"GET",
-			"POST",
-			"PUT",
-			"PATCH",
-			"DELETE",
-			"OPTIONS",
-		},
-	}))
+	fileStorage, err := infrastructure.NewLocalFileStorage("./uploads")
+	if err != nil && logger.Logger != nil {
+		logger.Logger.Fatal("Ошибка инициализации локального хранилища: " + err.Error())
+	}
 
-	app.Get("/swagger/*", func(c fiber.Ctx) error {
-		if c.Path() == "/swagger/doc.json" {
-			return c.SendFile("./docs/swagger.json")
-		}
-		c.Set("Content-Type", "text/html")
-		return c.SendString(`<!DOCTYPE html>
-            <html>
-            <head><link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.19.0/swagger-ui.css"></head>
-            <body><div id="swagger-ui"></div>
-            <script src="https://unpkg.com/swagger-ui-dist@5.19.0/swagger-ui-bundle.js"></script>
-            <script>SwaggerUIBundle({url: "/swagger/doc.json", dom_id: '#swagger-ui'});</script>
-            </body></html>`)
+	tokenProvider := infrastructure.NewTokenProvider(cfg.JWTSecret, 15)
+	menuRepository := infrastructure.NewMenuRepository(conn, psql)
+	menuUsecase := usecase.NewMenuUsecase(menuRepository)
+
+	app := fiber.New(fiber.Config{
+		AppName: "MixFood Menu Service",
 	})
 
 	app.Use("/uploads", static.New("./uploads"))
 
-	conn, err := infrastructure.Connect(cfg.DatabaseURL)
-	if err != nil {
-		logger.Logger.Fatal("Ошибка БД: " + err.Error())
-	}
-	defer conn.Close()
+	handlers.ConfigureApp(app, menuUsecase, tokenProvider, logAdapter, fileStorage)
 
-	fileStorage, err := infrastructure.NewLocalFileStorage("./uploads")
-	if err != nil {
-		logger.Logger.Fatal("Ошибка хранилища: " + err.Error())
+	if logger.Logger != nil {
+		logger.Logger.Info(fmt.Sprintf("Сервер меню запущен на порту :%s", cfg.ServerPort))
 	}
 
-	tokenProvider := infrastructure.NewTokenProvider(cfg.JWTSecret, 15)
-	menuUsecase := usecase.NewMenuUsecase(infrastructure.NewMenuRepository(conn, psql))
-
-	handlers.NewMenuHandler(menuUsecase, tokenProvider, nil, fileStorage).RegisterRoutes(app)
-
-	logger.Logger.Info(fmt.Sprintf("Сервер стартовал на :%s", cfg.ServerPort))
-	if err := app.Listen(":" + cfg.ServerPort); err != nil {
-		logger.Logger.Fatal("Сервер упал: " + err.Error())
+	if err := app.Listen(":" + cfg.ServerPort); err != nil && logger.Logger != nil {
+		logger.Logger.Fatal("Критическая ошибка сервера: " + err.Error())
 	}
 }

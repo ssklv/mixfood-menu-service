@@ -15,8 +15,8 @@ func validateDish(d *domain.Dish) error {
 	if err := validateDishName(d.Name); err != nil {
 		return err
 	}
-	if err := validateDishCategory(d.Category); err != nil {
-		return err
+	if d.CategoryID <= 0 {
+		return ErrInvalidCategory
 	}
 	if err := validateDishPrice(d.Price); err != nil {
 		return err
@@ -30,7 +30,7 @@ func validateDish(d *domain.Dish) error {
 	if err := validateDishImageURL(d.ImageURL); err != nil {
 		return err
 	}
-	if err := validateMeasurements(d.Category, d.Weight, d.Volume); err != nil {
+	if err := validateMeasurements(d.CategoryID, d.Weight, d.Volume); err != nil {
 		return err
 	}
 	return nil
@@ -42,15 +42,6 @@ func validateDishName(name string) error {
 		return ErrInvalidName
 	}
 	return nil
-}
-
-func validateDishCategory(category string) error {
-	switch strings.ToLower(strings.TrimSpace(category)) {
-	case "пицца", "бургеры", "закуски", "салаты", "десерты", "напитки":
-		return nil
-	default:
-		return ErrInvalidCategory
-	}
 }
 
 func validateDishPrice(price float64) error {
@@ -79,15 +70,14 @@ func validateDishImageURL(url string) error {
 	if trimmed == "" {
 		return nil
 	}
-	if strings.HasPrefix(trimmed, "http://") || strings.HasPrefix(trimmed, "https://") || strings.HasPrefix(trimmed, "uploads/") {
+	if strings.HasPrefix(trimmed, "http://") || strings.HasPrefix(trimmed, "https://") || strings.HasPrefix(trimmed, "/uploads/") {
 		return nil
 	}
 	return ErrInvalidImageURL
 }
 
-func validateMeasurements(category string, weight *int, volume *float64) error {
-	cleanCategory := strings.ToLower(strings.TrimSpace(category))
-	if cleanCategory == "напитки" {
+func validateMeasurements(categoryID int64, weight *int, volume *float64) error {
+	if categoryID == 6 {
 		if volume == nil || *volume <= 0 {
 			return ErrInvalidVolume
 		}
