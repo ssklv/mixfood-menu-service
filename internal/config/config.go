@@ -18,16 +18,20 @@ func getEnv(key, defaultValue string) string {
 	return defaultValue
 }
 
-func Load() *Config {
-	jwtSecret := getEnv("JWT_SECRET", "")
-	if jwtSecret == "" {
-		panic("JWT_SECRET is required")
+// getEnvRequired выбрасывает panic, если переменная не найдена
+func getEnvRequired(key string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		panic(key + " is required")
 	}
+	return value
+}
 
+func Load() *Config {
 	return &Config{
 		ServerPort:  getEnv("SERVER_PORT", "8082"),
 		DatabaseURL: getEnv("POSTGRES_URL", "postgres://postgres:secret@localhost:5432/mixfood_menu?sslmode=disable"),
 		MigrateURL:  getEnv("MIGRATE_URL", "file://migrations"),
-		JWTSecret:   jwtSecret,
+		JWTSecret:   getEnvRequired("JWT_SECRET"),
 	}
 }
