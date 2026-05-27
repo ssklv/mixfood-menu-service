@@ -1,6 +1,6 @@
 basePath: /
 definitions:
-  github_com_ssklv_mixfood-menu-service_internal_domain.Dish:
+  domain.Dish:
     properties:
       calories:
         type: integer
@@ -31,7 +31,7 @@ definitions:
       weight:
         type: integer
     type: object
-  github_com_ssklv_mixfood-menu-service_internal_domain.UpdateDishParams:
+  domain.UpdateDishParams:
     properties:
       calories:
         type: integer
@@ -56,7 +56,7 @@ definitions:
       weight:
         type: integer
     type: object
-  internal_handlers.ErrorResponse:
+  handlers.ErrorResponse:
     properties:
       error:
         type: string
@@ -64,7 +64,7 @@ definitions:
 host: localhost:8082
 info:
   contact: {}
-  description: API для управления категориями и блюдами меню
+  description: API for managing menu categories and dishes
   title: Mixfood Menu Service API
   version: "1.0"
 paths:
@@ -77,37 +77,49 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_ssklv_mixfood-menu-service_internal_domain.Dish'
+              $ref: '#/definitions/domain.Dish'
             type: array
-      summary: Получить все блюда
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get all dishes
     post:
       consumes:
       - application/json
       parameters:
-      - description: Данные создаваемого блюда
+      - description: Dish data
         in: body
         name: dish
         required: true
         schema:
-          $ref: '#/definitions/github_com_ssklv_mixfood-menu-service_internal_domain.Dish'
+          $ref: '#/definitions/domain.Dish'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_ssklv_mixfood-menu-service_internal_domain.Dish'
+            $ref: '#/definitions/domain.Dish'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_handlers.ErrorResponse'
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Создать новое блюдо
+      summary: Create a new dish
   /api/menu/{id}:
     delete:
       parameters:
-      - description: Идентификатор блюда
+      - description: Dish ID
         in: path
         name: id
         required: true
@@ -119,12 +131,20 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Удалить блюдо из меню
+      summary: Delete dish from menu
     get:
       parameters:
-      - description: Идентификатор блюда
+      - description: Dish ID
         in: path
         name: id
         required: true
@@ -135,39 +155,55 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_ssklv_mixfood-menu-service_internal_domain.Dish'
-      summary: Получить блюдо по ID
+            $ref: '#/definitions/domain.Dish'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get dish by ID
     patch:
       consumes:
       - application/json
       parameters:
-      - description: Идентификатор блюда
+      - description: Dish ID
         in: path
         name: id
         required: true
         type: integer
-      - description: Поля для обновления
+      - description: Fields to update
         in: body
         name: params
         required: true
         schema:
-          $ref: '#/definitions/github_com_ssklv_mixfood-menu-service_internal_domain.UpdateDishParams'
+          $ref: '#/definitions/domain.UpdateDishParams'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_ssklv_mixfood-menu-service_internal_domain.Dish'
+            $ref: '#/definitions/domain.Dish'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Обновить параметры блюда
+      summary: Update dish parameters
   /api/menu/upload:
     post:
       consumes:
       - multipart/form-data
       parameters:
-      - description: Файл изображения
+      - description: Image file
         in: formData
         name: image
         required: true
@@ -181,17 +217,25 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Загрузить изображение
+      summary: Upload dish image
 securityDefinitions:
   BearerAuth:
-    description: 'Введите токен в формате: Bearer <token>'
+    description: 'Enter token in format: Bearer <token>'
     in: header
     name: Authorization
     type: apiKey
   CookieAuth:
-    description: Токен доступа (access_token), автоматически извлекаемый из Cookie
+    description: Access token (access_token) automatically retrieved from cookies
     in: cookie
     name: access_token
     type: apiKey

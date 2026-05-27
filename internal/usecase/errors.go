@@ -13,6 +13,7 @@ var (
 	ErrInvalidBJU          = errors.New("proteins, fats, carbs or calories cannot be negative")
 	ErrInvalidImageURL     = errors.New("invalid image url format")
 	ErrMeasurementMismatch = errors.New("dish must have either weight for food or volume for drinks, not both")
+	ErrNoChanges           = errors.New("no changes to update in database")
 
 	ErrDishAlreadyExists = errors.New("dish with this name already exists in category")
 )

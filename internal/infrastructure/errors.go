@@ -6,5 +6,5 @@ import (
 
 var (
 	ErrDishNotFound = errors.New("dish database record not found")
-	ErrNoChanges    = errors.New("no changes to update in database")
+	//ErrNoChanges    = errors.New("no changes to update in database")
 )

@@ -20,15 +20,21 @@ const docTemplate = `{
                 "produces": [
                     "application/json"
                 ],
-                "summary": "Получить все блюда",
+                "summary": "Get all dishes",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_ssklv_mixfood-menu-service_internal_domain.Dish"
+                                "$ref": "#/definitions/domain.Dish"
                             }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     }
                 }
@@ -45,15 +51,15 @@ const docTemplate = `{
                 "produces": [
                     "application/json"
                 ],
-                "summary": "Создать новое блюдо",
+                "summary": "Create a new dish",
                 "parameters": [
                     {
-                        "description": "Данные создаваемого блюда",
+                        "description": "Dish data",
                         "name": "dish",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_ssklv_mixfood-menu-service_internal_domain.Dish"
+                            "$ref": "#/definitions/domain.Dish"
                         }
                     }
                 ],
@@ -61,13 +67,25 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_ssklv_mixfood-menu-service_internal_domain.Dish"
+                            "$ref": "#/definitions/domain.Dish"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_handlers.ErrorResponse"
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     }
                 }
@@ -86,11 +104,11 @@ const docTemplate = `{
                 "produces": [
                     "application/json"
                 ],
-                "summary": "Загрузить изображение",
+                "summary": "Upload dish image",
                 "parameters": [
                     {
                         "type": "file",
-                        "description": "Файл изображения",
+                        "description": "Image file",
                         "name": "image",
                         "in": "formData",
                         "required": true
@@ -105,6 +123,18 @@ const docTemplate = `{
                                 "type": "string"
                             }
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
                     }
                 }
             }
@@ -114,11 +144,11 @@ const docTemplate = `{
                 "produces": [
                     "application/json"
                 ],
-                "summary": "Получить блюдо по ID",
+                "summary": "Get dish by ID",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "Идентификатор блюда",
+                        "description": "Dish ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -128,7 +158,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_ssklv_mixfood-menu-service_internal_domain.Dish"
+                            "$ref": "#/definitions/domain.Dish"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     }
                 }
@@ -139,11 +181,11 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "summary": "Удалить блюдо из меню",
+                "summary": "Delete dish from menu",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "Идентификатор блюда",
+                        "description": "Dish ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -157,6 +199,18 @@ const docTemplate = `{
                             "additionalProperties": {
                                 "type": "string"
                             }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     }
                 }
@@ -173,22 +227,22 @@ const docTemplate = `{
                 "produces": [
                     "application/json"
                 ],
-                "summary": "Обновить параметры блюда",
+                "summary": "Update dish parameters",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "Идентификатор блюда",
+                        "description": "Dish ID",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Поля для обновления",
+                        "description": "Fields to update",
                         "name": "params",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_ssklv_mixfood-menu-service_internal_domain.UpdateDishParams"
+                            "$ref": "#/definitions/domain.UpdateDishParams"
                         }
                     }
                 ],
@@ -196,7 +250,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_ssklv_mixfood-menu-service_internal_domain.Dish"
+                            "$ref": "#/definitions/domain.Dish"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     }
                 }
@@ -204,7 +270,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "github_com_ssklv_mixfood-menu-service_internal_domain.Dish": {
+        "domain.Dish": {
             "type": "object",
             "properties": {
                 "calories": {
@@ -251,7 +317,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ssklv_mixfood-menu-service_internal_domain.UpdateDishParams": {
+        "domain.UpdateDishParams": {
             "type": "object",
             "properties": {
                 "calories": {
@@ -289,7 +355,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_handlers.ErrorResponse": {
+        "handlers.ErrorResponse": {
             "type": "object",
             "properties": {
                 "error": {
@@ -300,13 +366,13 @@ const docTemplate = `{
     },
     "securityDefinitions": {
         "BearerAuth": {
-            "description": "Введите токен в формате: Bearer \u003ctoken\u003e",
+            "description": "Enter token in format: Bearer \u003ctoken\u003e",
             "type": "apiKey",
             "name": "Authorization",
             "in": "header"
         },
         "CookieAuth": {
-            "description": "Токен доступа (access_token), автоматически извлекаемый из Cookie",
+            "description": "Access token (access_token) automatically retrieved from cookies",
             "type": "apiKey",
             "name": "access_token",
             "in": "cookie"
@@ -321,7 +387,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "/",
 	Schemes:          []string{},
 	Title:            "Mixfood Menu Service API",
-	Description:      "API для управления категориями и блюдами меню",
+	Description:      "API for managing menu categories and dishes",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

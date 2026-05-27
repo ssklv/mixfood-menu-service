@@ -40,7 +40,6 @@ func TestCreateDish_ValidationErrors(t *testing.T) {
 	mockRepo := mocks.NewMenuRepository(t)
 	uc := &menuUsecase{repository: mockRepo}
 
-	// Хелперы для указателей
 	weight := 100
 	volume := 500.0
 
@@ -68,10 +67,10 @@ func TestCreateDish_ValidationErrors(t *testing.T) {
 			name: "Measurement Mismatch (Category 6 has weight)",
 			dish: &domain.Dish{
 				Name:       "Cola",
-				CategoryID: 6, // Напиток
+				CategoryID: 6,
 				Price:      100,
-				Volume:     &volume, // Объем есть (проходим проверку объема)
-				Weight:     &weight, // Но мы добавили вес, что запрещено
+				Volume:     &volume,
+				Weight:     &weight,
 			},
 			expectedErr: ErrMeasurementMismatch,
 		},

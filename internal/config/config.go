@@ -18,7 +18,6 @@ func getEnv(key, defaultValue string) string {
 	return defaultValue
 }
 
-// getEnvRequired выбрасывает panic, если переменная не найдена
 func getEnvRequired(key string) string {
 	value := os.Getenv(key)
 	if value == "" {

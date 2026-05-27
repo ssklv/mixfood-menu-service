@@ -30,8 +30,61 @@ func validateDish(d *domain.Dish) error {
 	if err := validateDishImageURL(d.ImageURL); err != nil {
 		return err
 	}
-	if err := validateMeasurements(d.CategoryID, d.Weight, d.Volume); err != nil {
+	if err := validateMeasurements(d.Weight, d.Volume); err != nil {
 		return err
+	}
+	return nil
+}
+
+func validateUpdateDish(input *domain.UpdateDishParams) error {
+	if input.Name != nil {
+		if err := validateDishName(*input.Name); err != nil {
+			return err
+		}
+	}
+	if input.CategoryID != nil && *input.CategoryID <= 0 {
+		return ErrInvalidCategory
+	}
+	if input.Price != nil {
+		if err := validateDishPrice(*input.Price); err != nil {
+			return err
+		}
+	}
+	if input.Proteins != nil || input.Fats != nil || input.Carbs != nil {
+		p, f, c := 0.0, 0.0, 0.0
+		if input.Proteins != nil {
+			p = *input.Proteins
+		}
+		if input.Fats != nil {
+			f = *input.Fats
+		}
+		if input.Carbs != nil {
+			c = *input.Carbs
+		}
+		if err := validateDishBJU(p, f, c); err != nil {
+			return err
+		}
+	}
+	if input.Calories != nil {
+		if err := validateDishCalories(*input.Calories); err != nil {
+			return err
+		}
+	}
+	if input.ImageURL != nil {
+		if err := validateDishImageURL(*input.ImageURL); err != nil {
+			return err
+		}
+	}
+	if input.Weight != nil || input.Volume != nil {
+		if input.Weight != nil && *input.Weight <= 0 {
+			return ErrInvalidWeight
+		}
+		if input.Volume != nil && *input.Volume <= 0 {
+			return ErrInvalidVolume
+		}
+		if input.Weight != nil && input.Volume != nil {
+			return ErrMeasurementMismatch
+		}
 	}
 	return nil
 }
@@ -76,21 +129,18 @@ func validateDishImageURL(url string) error {
 	return ErrInvalidImageURL
 }
 
-func validateMeasurements(categoryID int64, weight *int, volume *float64) error {
-	if categoryID == 6 {
-		if volume == nil || *volume <= 0 {
-			return ErrInvalidVolume
-		}
-		if weight != nil {
-			return ErrMeasurementMismatch
-		}
-	} else {
-		if weight == nil || *weight <= 0 {
-			return ErrInvalidWeight
-		}
-		if volume != nil {
-			return ErrMeasurementMismatch
-		}
+func validateMeasurements(weight *int, volume *float64) error {
+	if weight == nil && volume == nil {
+		return ErrInvalidWeight
+	}
+	if weight != nil && volume != nil {
+		return ErrMeasurementMismatch
+	}
+	if weight != nil && *weight <= 0 {
+		return ErrInvalidWeight
+	}
+	if volume != nil && *volume <= 0 {
+		return ErrInvalidVolume
 	}
 	return nil
 }

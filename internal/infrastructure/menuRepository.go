@@ -75,12 +75,14 @@ func (r *menuRepository) UpdateDish(ctx context.Context, input *domain.UpdateDis
 	if input.Price != nil {
 		builder = builder.Set("price", *input.Price)
 	}
+
 	if input.Weight != nil {
-		builder = builder.Set("weight", input.Weight)
+		builder = builder.Set("weight", *input.Weight)
 	}
 	if input.Volume != nil {
-		builder = builder.Set("volume", input.Volume)
+		builder = builder.Set("volume", *input.Volume)
 	}
+
 	if input.Proteins != nil {
 		builder = builder.Set("proteins", *input.Proteins)
 	}

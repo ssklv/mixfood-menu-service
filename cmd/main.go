@@ -33,19 +33,19 @@ func (za *zapAdapter) Warn(msg string, fields ...any) {
 
 // @title                       Mixfood Menu Service API
 // @version                     1.0
-// @description                 API для управления категориями и блюдами меню
+// @description                 API for managing menu categories and dishes
 // @host                        localhost:8082
 // @BasePath                    /
 
 // @securityDefinitions.apikey  BearerAuth
 // @in                          header
 // @name                        Authorization
-// @description                 Введите токен в формате: Bearer <token>
+// @description                 Enter token in format: Bearer <token>
 
 // @securityDefinitions.apikey  CookieAuth
 // @in                          cookie
 // @name                        access_token
-// @description                 Токен доступа (access_token), автоматически извлекаемый из Cookie
+// @description                 Access token (access_token) automatically retrieved from cookies
 func main() {
 	logger.InitLogger()
 	if logger.Logger != nil {
@@ -53,7 +53,7 @@ func main() {
 	}
 
 	if err := godotenv.Load(); err != nil && logger.Logger != nil {
-		logger.Logger.Warn("Файл .env не найден")
+		logger.Logger.Warn(".env file not found")
 	}
 
 	cfg := config.Load()
@@ -61,7 +61,7 @@ func main() {
 
 	conn, err := infrastructure.Connect(cfg.DatabaseURL)
 	if err != nil && logger.Logger != nil {
-		logger.Logger.Fatal("Ошибка подключения к БД: " + err.Error())
+		logger.Logger.Fatal("Database connection error: " + err.Error())
 	}
 	defer conn.Close()
 
@@ -69,7 +69,7 @@ func main() {
 
 	fileStorage, err := infrastructure.NewLocalFileStorage("./uploads")
 	if err != nil && logger.Logger != nil {
-		logger.Logger.Fatal("Ошибка инициализации локального хранилища: " + err.Error())
+		logger.Logger.Fatal("File storage initialization error: " + err.Error())
 	}
 
 	tokenProvider := infrastructure.NewTokenProvider(cfg.JWTSecret, 15)
@@ -85,10 +85,10 @@ func main() {
 	handlers.ConfigureApp(app, menuUsecase, tokenProvider, logAdapter, fileStorage)
 
 	if logger.Logger != nil {
-		logger.Logger.Info(fmt.Sprintf("Сервер меню запущен на порту :%s", cfg.ServerPort))
+		logger.Logger.Info(fmt.Sprintf("Menu service started on port :%s", cfg.ServerPort))
 	}
 
 	if err := app.Listen(":" + cfg.ServerPort); err != nil && logger.Logger != nil {
-		logger.Logger.Fatal("Критическая ошибка сервера: " + err.Error())
+		logger.Logger.Fatal("Critical server error: " + err.Error())
 	}
 }
